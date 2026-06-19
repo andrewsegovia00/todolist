@@ -1,0 +1,20 @@
+# Linux (systemd) unit for the admin dashboard (optional).
+#   sudo cp deploy/systemd/command-hub-dashboard.service /etc/systemd/system/
+#   sudo systemctl enable --now command-hub-dashboard
+
+[Unit]
+Description=Command Hub admin dashboard
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=andrew
+WorkingDirectory=/home/andrew/command-hub
+EnvironmentFile=/home/andrew/command-hub/.env
+ExecStart=/home/andrew/command-hub/.venv/bin/python -m dashboard.app
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

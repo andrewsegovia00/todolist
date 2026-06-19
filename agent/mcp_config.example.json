@@ -1,0 +1,17 @@
+{
+  "_comment": "Supabase MCP config for the agent. Copy to agent/mcp_config.json (gitignored if it contains a token) and fill in your project ref + access token. Passed to `claude -p --mcp-config`. Docs: https://supabase.com/docs (MCP server).",
+  "mcpServers": {
+    "supabase": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@supabase/mcp-server-supabase@latest",
+        "--project-ref",
+        "YOUR_SUPABASE_PROJECT_REF"
+      ],
+      "env": {
+        "SUPABASE_ACCESS_TOKEN": "YOUR_SUPABASE_PERSONAL_ACCESS_TOKEN"
+      }
+    }
+  }
+}

@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="panel">
+  <h2>Edit idea</h2>
+  <form method="post" class="stack">
+    <label>Title
+      <input name="title" value="{{ idea.title }}" required>
+    </label>
+    <label>Notes
+      <textarea name="notes" rows="8">{{ idea.notes or '' }}</textarea>
+    </label>
+    <label>Bucket
+      <select name="bucket_id">
+        <option value="">—</option>
+        {% for b in buckets %}
+          <option value="{{ b.id }}" {{ 'selected' if idea.bucket and idea.bucket.id == b.id }}>{{ b.name }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>Project
+      <select name="project_id">
+        <option value="">—</option>
+        {% for p in projects %}
+          <option value="{{ p.id }}" {{ 'selected' if idea.project and idea.project.id == p.id }}>{{ p.name }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>Status
+      <select name="status_id">
+        <option value="">—</option>
+        {% for s in statuses %}
+          <option value="{{ s.id }}" {{ 'selected' if idea.status and idea.status.id == s.id }}>{{ s.name }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <div class="modal-actions">
+      <a class="btn" href="{{ url_for('index') }}">Cancel</a>
+      <button class="btn primary" type="submit">Save</button>
+    </div>
+  </form>
+</section>
+{% endblock %}

@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "command-hub"
+version = "0.1.0"
+description = "A personal operating system run through Discord: content idea hub, optimized schedule + timecard, and a dead-time task/idea queue."
+requires-python = ">=3.11"
+readme = "README.md"
+
+[tool.setuptools.packages.find]
+include = ["core*", "db*", "agent*", "bot*", "dashboard*", "integrations*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"

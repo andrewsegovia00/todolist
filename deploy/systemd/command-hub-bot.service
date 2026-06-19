@@ -1,0 +1,26 @@
+# Linux (systemd) unit for the Command Hub bot.
+# Install:
+#   sudo cp deploy/systemd/command-hub-bot.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now command-hub-bot
+# Logs:  journalctl -u command-hub-bot -f
+#
+# Edit User, WorkingDirectory, and the venv path to match the hub.
+
+[Unit]
+Description=Command Hub Discord bot
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=andrew
+WorkingDirectory=/home/andrew/command-hub
+# EnvironmentFile loads .env (KEY=VALUE lines). Keep ANTHROPIC_API_KEY OUT of it.
+EnvironmentFile=/home/andrew/command-hub/.env
+ExecStart=/home/andrew/command-hub/.venv/bin/python -m bot.main
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

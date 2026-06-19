@@ -1,0 +1,70 @@
+/* Neutral, minimal styling by design (handoff guardrail #4).
+   Clean structure so the owner can restyle later. No opinionated theme. */
+:root {
+  --fg: #1a1a1a;
+  --muted: #777;
+  --border: #ddd;
+  --bg: #fff;
+  --panel: #fafafa;
+  --danger: #b00020;
+}
+* { box-sizing: border-box; }
+body {
+  font-family: system-ui, -apple-system, sans-serif;
+  color: var(--fg);
+  background: var(--bg);
+  margin: 0;
+}
+.topbar {
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--border);
+}
+.muted { color: var(--muted); }
+.container { max-width: 1000px; margin: 0 auto; padding: 20px; }
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 16px;
+  margin-bottom: 20px;
+}
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+table { width: 100%; border-collapse: collapse; }
+th, td { text-align: left; padding: 8px; border-bottom: 1px solid var(--border); }
+th { font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spacing: .03em; }
+.filters { display: flex; gap: 12px; align-items: end; margin-bottom: 12px; flex-wrap: wrap; }
+.filters label { display: flex; flex-direction: column; font-size: 13px; color: var(--muted); }
+.actions { white-space: nowrap; }
+.btn {
+  display: inline-block;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  text-decoration: none;
+  color: var(--fg);
+}
+.btn.tiny { padding: 2px 6px; font-size: 12px; }
+.btn.primary { background: #1a1a1a; color: #fff; border-color: #1a1a1a; }
+.btn.danger { color: var(--danger); border-color: var(--danger); }
+.inline { display: inline; }
+.stack { display: flex; flex-direction: column; gap: 12px; max-width: 600px; }
+.stack input, .stack textarea, .stack select { width: 100%; padding: 8px; }
+input, select, textarea {
+  font: inherit; padding: 6px; border: 1px solid var(--border); border-radius: 4px;
+}
+.chips { list-style: none; padding: 0; }
+.chips li { padding: 4px 0; }
+.flash {
+  background: #eef; border: 1px solid #ccd; padding: 8px 12px;
+  border-radius: 4px; margin-bottom: 16px;
+}
+.modal {
+  position: fixed; inset: 0; background: rgba(0,0,0,.4);
+  display: flex; align-items: center; justify-content: center;
+}
+.modal[hidden] { display: none; }
+.modal-box { background: #fff; padding: 24px; border-radius: 6px; max-width: 420px; }
+.modal-actions { display: flex; gap: 12px; justify-content: flex-end; margin-top: 16px; }
