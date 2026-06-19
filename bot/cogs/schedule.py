@@ -19,7 +19,6 @@ from discord.ext import commands
 from core.logging_config import get_logger
 from bot.services import analytics
 from db.repos import (
-    config_repo,
     dayoff_repo,
     deadtime_repo,
     ideas_repo,

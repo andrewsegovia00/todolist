@@ -11,7 +11,7 @@ lane and free-form capture/recall, which live in the cogs, not here.
 """
 from __future__ import annotations
 
-from datetime import date, datetime, time, timedelta
+from datetime import date, datetime, timedelta
 from zoneinfo import ZoneInfo
 
 import discord

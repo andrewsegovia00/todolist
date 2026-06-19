@@ -5,6 +5,7 @@
 *.pem
 secrets/
 agent/mcp_config.json
+db/schedule_template.json
 
 # Python
 __pycache__/

@@ -1,0 +1,37 @@
+{
+  "_comment": "Your weekly schedule template + one-off blocks. Copy to db/schedule_template.json and edit, then load with `python -m db.load_schedule`. Recurring blocks use `days` (mon,tue,wed,thu,fri,sat,sun | weekdays | daily). One-off blocks use `date` (YYYY-MM-DD) instead. Times are HH:MM in the hub timezone. `goal` is what you must achieve in the block.",
+  "blocks": [
+    {
+      "label": "Morning lift",
+      "category": "Fitness",
+      "goal": "Push day, top set 5x5",
+      "days": "mon,wed,fri",
+      "start": "06:00",
+      "end": "07:00"
+    },
+    {
+      "label": "Content block",
+      "category": "Content",
+      "goal": "Script or film one piece",
+      "days": "weekdays",
+      "start": "09:00",
+      "end": "11:00"
+    },
+    {
+      "label": "eBay shipping",
+      "category": "Bulk-Card eBay",
+      "goal": "Pack and ship the day's sold lots",
+      "days": "daily",
+      "start": "17:00",
+      "end": "17:30"
+    },
+    {
+      "label": "Dentist",
+      "category": "Appointment",
+      "goal": "",
+      "date": "2026-07-02",
+      "start": "14:00",
+      "end": "15:00"
+    }
+  ]
+}
