@@ -105,6 +105,18 @@ must be done locally.
 - Schedule blocks ingestion: recurring_rule currently supports a simple weekly
   spec (`mon,wed,fri` / `weekdays` / `daily`) — extend to full RRULE if needed.
 
+## Provisioning inputs (captured 2026-06-23)
+- **Hub OS:** macOS → use `deploy/launchd/com.commandhub.bot.plist`.
+- **Timezone:** America/Phoenix (no DST).
+- **People:** owner = **Red**, partner = **Green** (defaults baked into
+  `core/settings.py`; override via `OWNER_DISPLAY_NAME`/`PARTNER_DISPLAY_NAME`).
+  Real Discord user IDs still needed in `.env` at the hub.
+- **Buckets/projects/statuses:** defaults unchanged.
+- **Schedule:** Red's weekday template lives in `db/schedule_template.json`
+  (13 blocks, Mon–Fri, no weekend plan) — load with `make load-schedule`.
+- Still needed at the hub: Discord token + IDs/channels, Supabase keys +
+  DATABASE_URL, Claude Code logged into Max. See `SETUP.md`.
+
 ## Decisions / notes
 - Schedule is **shared** (no `person_id` on blocks yet). Split later by adding
   `person_id` to `schedule_blocks`/`block_logs` and scoping RLS.

@@ -1,0 +1,109 @@
+{
+  "_comment": "Red's weekday schedule (Mon-Fri), Phoenix time. No weekend plan. Load with `make load-schedule`. Each block fires a start reminder + a close-out for the timecard; `goal` is what to achieve in the block.",
+  "blocks": [
+    {
+      "label": "Wake + morning routine",
+      "category": "Routine",
+      "goal": "Phone across the room; bathroom, teeth, clothes, energy drink. Out by 5:30.",
+      "days": "weekdays",
+      "start": "05:15",
+      "end": "05:30"
+    },
+    {
+      "label": "Drive to gym",
+      "category": "Routine",
+      "goal": "Drive to the gym.",
+      "days": "weekdays",
+      "start": "05:30",
+      "end": "05:45"
+    },
+    {
+      "label": "Lift + cardio",
+      "category": "Fitness",
+      "goal": "45 min lift + 45 min cardio. One 10-min market check at 6:30.",
+      "days": "weekdays",
+      "start": "05:45",
+      "end": "07:20"
+    },
+    {
+      "label": "Drive home",
+      "category": "Routine",
+      "goal": "Drive home.",
+      "days": "weekdays",
+      "start": "07:20",
+      "end": "07:40"
+    },
+    {
+      "label": "Shower + breakfast",
+      "category": "Routine",
+      "goal": "Shower + oatmeal. Leave by 8:00.",
+      "days": "weekdays",
+      "start": "07:40",
+      "end": "08:00"
+    },
+    {
+      "label": "Work",
+      "category": "Work",
+      "goal": "Workday.",
+      "days": "weekdays",
+      "start": "08:30",
+      "end": "17:00"
+    },
+    {
+      "label": "Dinner + episode",
+      "category": "Personal",
+      "goal": "Eat + one episode.",
+      "days": "weekdays",
+      "start": "17:30",
+      "end": "18:10"
+    },
+    {
+      "label": "Reset",
+      "category": "Routine",
+      "goal": "Reset; phone in another room.",
+      "days": "weekdays",
+      "start": "18:10",
+      "end": "18:20"
+    },
+    {
+      "label": "Study",
+      "category": "Study",
+      "goal": "Two 40-min study sprints.",
+      "days": "weekdays",
+      "start": "18:20",
+      "end": "19:50"
+    },
+    {
+      "label": "Capture ideas",
+      "category": "Content",
+      "goal": "Break -> capture ideas in #ideas.",
+      "days": "weekdays",
+      "start": "19:50",
+      "end": "20:00"
+    },
+    {
+      "label": "Business block",
+      "category": "Business",
+      "goal": "Business block.",
+      "days": "weekdays",
+      "start": "20:00",
+      "end": "20:50"
+    },
+    {
+      "label": "Shut down",
+      "category": "Routine",
+      "goal": "Tomorrow's top 3; lay out gym gear.",
+      "days": "weekdays",
+      "start": "20:50",
+      "end": "21:00"
+    },
+    {
+      "label": "Wind down",
+      "category": "Routine",
+      "goal": "Wind down; asleep by 9:15 (8 hrs).",
+      "days": "weekdays",
+      "start": "21:00",
+      "end": "21:15"
+    }
+  ]
+}

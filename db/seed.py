@@ -16,12 +16,12 @@ log = get_logger("db.seed")
 
 
 def seed_people() -> None:
-    settings.require("owner_discord_user_id", "partner_discord_user_id", "partner_display_name")
+    settings.require("owner_discord_user_id", "partner_discord_user_id")
     client = db()
     rows = [
         {
             "discord_user_id": settings.owner_discord_user_id,
-            "name": "Andrew",
+            "name": settings.owner_display_name,
             "role": "owner",
         },
         {
