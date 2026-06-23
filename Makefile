@@ -6,7 +6,7 @@ PY := $(VENV)/bin/python
 PIP := $(VENV)/bin/pip
 
 .PHONY: help setup test lint check-env check-supabase check-claude run dashboard \
-        migrate seed load-schedule clean
+        migrate seed load-schedule bootstrap doctor clean
 
 help:
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -40,6 +40,16 @@ seed: ## Seed people + channel routes from .env
 
 load-schedule: ## Load db/schedule_template.json into schedule_blocks
 	$(PY) -m db.load_schedule
+
+bootstrap: ## DB setup in order: migrate -> seed -> load-schedule
+	$(PY) -m db.migrate
+	$(PY) -m db.seed
+	-$(PY) -m db.load_schedule
+
+doctor: ## Run all Phase-0 health checks
+	-$(PY) -m scripts.check_env
+	-$(PY) -m scripts.check_supabase
+	-$(PY) -m scripts.check_claude
 
 run: ## Start the Discord bot + scheduler
 	$(PY) -m bot.main
