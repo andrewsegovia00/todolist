@@ -51,11 +51,14 @@ class Settings:
     owner_discord_user_id: str | None = field(
         default_factory=lambda: _get("OWNER_DISCORD_USER_ID")
     )
+    owner_display_name: str = field(
+        default_factory=lambda: _get("OWNER_DISPLAY_NAME", "Red")
+    )
     partner_discord_user_id: str | None = field(
         default_factory=lambda: _get("PARTNER_DISCORD_USER_ID")
     )
-    partner_display_name: str | None = field(
-        default_factory=lambda: _get("PARTNER_DISPLAY_NAME")
+    partner_display_name: str = field(
+        default_factory=lambda: _get("PARTNER_DISPLAY_NAME", "Green")
     )
 
     # Supabase

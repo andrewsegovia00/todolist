@@ -3,7 +3,13 @@
      Install:
        cp deploy/launchd/com.commandhub.bot.plist ~/Library/LaunchAgents/
        launchctl load ~/Library/LaunchAgents/com.commandhub.bot.plist
-     Edit paths to match the hub. Do NOT put ANTHROPIC_API_KEY in here. -->
+     Edit the paths (replace "andrew" with your macOS username) to match the hub.
+     Do NOT put ANTHROPIC_API_KEY in here.
+
+     The process is wrapped in `caffeinate -i` so the Mac won't idle-sleep the
+     hub out from under the scheduler — block reminders/close-outs only fire if
+     the machine is awake. caffeinate holds the assertion for as long as the bot
+     runs and releases it if the bot exits. -->
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
   "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -12,6 +18,8 @@
   <string>com.commandhub.bot</string>
   <key>ProgramArguments</key>
   <array>
+    <string>/usr/bin/caffeinate</string>
+    <string>-i</string>
     <string>/Users/andrew/command-hub/.venv/bin/python</string>
     <string>-m</string>
     <string>bot.main</string>

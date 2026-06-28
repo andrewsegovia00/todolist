@@ -78,6 +78,7 @@ Map each channel to a mode in `channel_config` (set `CHANNEL_*` env before
 
 | Command | Channel | What |
 |---|---|---|
+| `/help` | any | List every command and what the toggles do |
 | `/ideas [bucket] [project]` | #ideas | List idea titles (deterministic recall) |
 | `/buckets` | #ideas | List active buckets |
 | `/close <block> <done\|no> [HH:MM]` | #schedule | Close out a block (timecard) |
