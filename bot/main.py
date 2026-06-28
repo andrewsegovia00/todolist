@@ -36,7 +36,7 @@ class CommandHubBot(commands.Bot):
         self.scheduler: HubScheduler | None = None
 
     async def setup_hook(self) -> None:
-        for ext in ("bot.cogs.ideas", "bot.cogs.schedule", "bot.cogs.config_cog"):
+        for ext in ("bot.cogs.ideas", "bot.cogs.schedule", "bot.cogs.config_cog", "bot.cogs.help_cog"):
             await self.load_extension(ext)
         # Sync slash commands — to one guild if configured (instant), else global.
         if settings.discord_guild_id:
