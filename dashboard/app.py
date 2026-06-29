@@ -1,49 +1,198 @@
-"""Admin dashboard (handoff 5.7).
+"""Admin dashboard (handoff 5.7) — "command console" theme.
 
-Functional first, neutral styling (guardrail #4) — a clean component structure
-the owner can restyle later. Server-rendered Flask running on the trusted hub;
-the browser never receives a Supabase key (the server holds service_role).
+Server-rendered Flask running on the trusted hub; the browser never receives a
+Supabase key (the server holds service_role). The manage page is registry-driven
+(see dashboard/entities.py): list / filter / bulk-delete / bulk-retag / CSV
+export / CSV import across every managed table.
 
 Run:  python -m dashboard.app
 """
 from __future__ import annotations
 
-from flask import Flask, abort, flash, redirect, render_template, request, url_for
+from flask import (
+    Flask,
+    Response,
+    abort,
+    flash,
+    redirect,
+    render_template,
+    request,
+    url_for,
+)
 
 from core.guardrails import run_all as run_guardrails
 from core.settings import settings
-from db.repos import config_repo, ideas_repo
+from dashboard import csv_io, entities
+from db.client import db
+from db.repos import bulk_repo, config_repo, ideas_repo
+
+
+def _count(table: str, **eq) -> int:
+    q = db().table(table).select("id", count="exact").limit(1)
+    for k, v in eq.items():
+        q = q.eq(k, v)
+    res = q.execute()
+    return res.count or 0
 
 
 def create_app() -> Flask:
     app = Flask(__name__)
     app.secret_key = settings.dashboard_secret or "dev-only-not-secret"
 
+    @app.context_processor
+    def inject_nav():
+        return {"nav_entities": entities.all_entities()}
+
+    # --- Home overview ------------------------------------------------------
+
     @app.route("/")
     def index():
-        bucket = request.args.get("bucket") or None
-        project = request.args.get("project") or None
-        tag = request.args.get("tag") or None
+        stats = [
+            {"label": "Ideas", "value": _count("ideas"), "icon": "bulb", "key": "ideas"},
+            {"label": "Open tasks", "value": _count("dead_time_tasks", state="open"),
+             "icon": "checklist", "key": "tasks"},
+            {"label": "Schedule blocks", "value": _count("schedule_blocks"),
+             "icon": "calendar", "key": "schedule"},
+            {"label": "Active projects", "value": _count("projects", active=True),
+             "icon": "folder", "key": "projects"},
+            {"label": "Buckets", "value": _count("buckets"), "icon": "bucket", "key": "buckets"},
+            {"label": "Tags", "value": _count("tags"), "icon": "tag", "key": "tags"},
+        ]
+        return render_template("home.html", stats=stats)
 
-        bucket_row = config_repo.get_bucket_by_name(bucket) if bucket else None
-        project_row = config_repo.get_project_by_name(project) if project else None
-        tag_rows = config_repo.list_tags()
-        tag_row = next((t for t in tag_rows if t["name"] == tag), None) if tag else None
+    # --- Manage (registry-driven) ------------------------------------------
 
-        ideas = ideas_repo.list_ideas(
-            bucket_id=bucket_row["id"] if bucket_row else None,
-            project_id=project_row["id"] if project_row else None,
-            tag_id=tag_row["id"] if tag_row else None,
-        )
+    @app.route("/manage/<entity_key>")
+    def manage(entity_key: str):
+        entity = entities.get(entity_key)
+        if not entity:
+            abort(404)
+        args = {f.name: (request.args.get(f.name) or "") for f in entity.filters}
+        rows = entity.rows(args)
+        filters = [
+            {"name": f.name, "label": f.label, "options": f.options(), "value": args.get(f.name, "")}
+            for f in entity.filters
+        ]
         return render_template(
-            "index.html",
-            ideas=ideas,
-            buckets=config_repo.list_buckets(active_only=False),
-            projects=config_repo.list_projects(active_only=False),
-            statuses=config_repo.list_statuses(active_only=False),
-            tags=tag_rows,
-            filters={"bucket": bucket, "project": project, "tag": tag},
+            "manage.html",
+            entity=entity,
+            rows=rows,
+            filters=filters,
+            tags=config_repo.list_tags() if entity.supports_tags else [],
         )
+
+    @app.route("/manage/<entity_key>/bulk-delete", methods=["POST"])
+    def bulk_delete(entity_key: str):
+        entity = entities.get(entity_key)
+        if not entity or not entity.deletable:
+            abort(404)
+        ids = request.form.getlist("ids")
+        if not ids:
+            flash("Nothing selected.", "warn")
+            return redirect(url_for("manage", entity_key=entity_key))
+        n = bulk_repo.delete_many(entity.table, ids)
+        flash(f"Deleted {n} {entity.label.lower()}.", "ok")
+        return redirect(url_for("manage", entity_key=entity_key))
+
+    @app.route("/manage/<entity_key>/bulk-tag", methods=["POST"])
+    def bulk_tag(entity_key: str):
+        entity = entities.get(entity_key)
+        if not entity or not entity.supports_tags:
+            abort(404)
+        ids = request.form.getlist("ids")
+        tag_id = request.form.get("tag_id") or None
+        action = request.form.get("action", "add")
+        if not ids or not tag_id:
+            flash("Pick a tag and at least one row.", "warn")
+            return redirect(url_for("manage", entity_key=entity_key))
+        for idea_id in ids:
+            if action == "remove":
+                ideas_repo.remove_tag(idea_id, tag_id)
+            else:
+                ideas_repo.add_tag(idea_id, tag_id)
+        verb = "Removed tag from" if action == "remove" else "Tagged"
+        flash(f"{verb} {len(ids)} idea(s).", "ok")
+        return redirect(url_for("manage", entity_key=entity_key))
+
+    @app.route("/manage/<entity_key>/toggle-active", methods=["POST"])
+    def toggle_active(entity_key: str):
+        entity = entities.get(entity_key)
+        if not entity or not entity.has_active:
+            abort(404)
+        row_id = request.form.get("id")
+        desired = (request.form.get("active") == "true")
+        if row_id:
+            db().table(entity.table).update({"active": desired}).eq("id", row_id).execute()
+            flash(("Restored" if desired else "Archived") + " 1 row.", "ok")
+        return redirect(request.referrer or url_for("manage", entity_key=entity_key))
+
+    @app.route("/manage/<entity_key>/add", methods=["POST"])
+    def quick_add(entity_key: str):
+        entity = entities.get(entity_key)
+        if not entity or not entity.importable or not entity.create_fn:
+            abort(404)
+        rec: dict = {}
+        for f in entity.import_fields:
+            raw = (request.form.get(f.name) or "").strip()
+            if not raw:
+                continue
+            rec[f.name] = f.coerce(raw) if f.coerce else raw
+        missing = [f for f in entity.required_fields if not rec.get(f)]
+        if missing:
+            flash(f"Missing: {', '.join(missing)}.", "warn")
+            return redirect(url_for("manage", entity_key=entity_key))
+        entity.create_fn(rec)
+        flash(f"Added 1 {entity.label.lower().rstrip('s')}.", "ok")
+        return redirect(url_for("manage", entity_key=entity_key))
+
+    @app.route("/manage/<entity_key>/export.csv")
+    def export_csv(entity_key: str):
+        entity = entities.get(entity_key)
+        if not entity:
+            abort(404)
+        args = {f.name: (request.args.get(f.name) or "") for f in entity.filters}
+        rows = entity.rows(args)
+        ids_param = request.args.get("ids")
+        if ids_param:
+            wanted = set(ids_param.split(","))
+            rows = [r for r in rows if str(r.get("id")) in wanted]
+        flat = [entity.to_export_row(r) for r in rows]
+        body = csv_io.to_csv(flat, entity.export_columns())
+        return Response(
+            body,
+            mimetype="text/csv",
+            headers={"Content-Disposition": f'attachment; filename="{entity.key}.csv"'},
+        )
+
+    @app.route("/manage/<entity_key>/import", methods=["POST"])
+    def import_csv(entity_key: str):
+        entity = entities.get(entity_key)
+        if not entity or not entity.importable or not entity.create_fn:
+            abort(404)
+        file = request.files.get("file")
+        if not file or not file.filename:
+            flash("Choose a CSV file first.", "warn")
+            return redirect(url_for("manage", entity_key=entity_key))
+        text = file.read().decode("utf-8-sig", errors="replace")
+        rows, errors = csv_io.parse_csv(
+            text, entity.known_fields, entity.required_fields, entity.coercers
+        )
+        created = 0
+        for rec in rows:
+            try:
+                entity.create_fn(rec)
+                created += 1
+            except Exception as e:  # surface, don't abort the batch
+                errors.append(f"insert failed: {e}")
+        msg = f"{created} created"
+        if errors:
+            shown = "; ".join(errors[:5])
+            more = f" (+{len(errors) - 5} more)" if len(errors) > 5 else ""
+            msg += f", {len(errors)} skipped: {shown}{more}"
+        flash(msg, "ok" if created and not errors else ("warn" if created else "err"))
+        return redirect(url_for("manage", entity_key=entity_key))
+
+    # --- Single-idea editor (kept from the original dashboard) --------------
 
     @app.route("/ideas/<idea_id>/edit", methods=["GET", "POST"])
     def edit_idea(idea_id: str):
@@ -51,19 +200,16 @@ def create_app() -> Flask:
         if not idea:
             abort(404)
         if request.method == "POST":
-            bucket_id = request.form.get("bucket_id") or None
-            project_id = request.form.get("project_id") or None
-            status_id = request.form.get("status_id") or None
             ideas_repo.update_idea(
                 idea_id,
                 title=request.form["title"].strip(),
                 notes=request.form.get("notes", "").strip(),
-                bucket_id=bucket_id,
-                project_id=project_id,
-                status_id=status_id,
+                bucket_id=request.form.get("bucket_id") or None,
+                project_id=request.form.get("project_id") or None,
+                status_id=request.form.get("status_id") or None,
             )
-            flash("Idea updated.")
-            return redirect(url_for("index"))
+            flash("Idea updated.", "ok")
+            return redirect(url_for("manage", entity_key="ideas"))
         return render_template(
             "edit_idea.html",
             idea=idea,
@@ -71,36 +217,6 @@ def create_app() -> Flask:
             projects=config_repo.list_projects(active_only=False),
             statuses=config_repo.list_statuses(active_only=False),
         )
-
-    @app.route("/ideas/<idea_id>/delete", methods=["POST"])
-    def delete_idea(idea_id: str):
-        # Delete is gated behind the "are you sure?" modal in the UI; this route
-        # only runs after the confirm action POSTs here.
-        ideas_repo.delete_idea(idea_id)
-        flash("Idea deleted.")
-        return redirect(url_for("index"))
-
-    @app.route("/projects", methods=["POST"])
-    def add_project():
-        name = request.form.get("name", "").strip()
-        if name:
-            config_repo.add_project(name)
-            flash(f"Project '{name}' added.")
-        return redirect(url_for("index"))
-
-    @app.route("/projects/<project_id>/archive", methods=["POST"])
-    def archive_project(project_id: str):
-        config_repo.archive_project(project_id)
-        flash("Project archived.")
-        return redirect(url_for("index"))
-
-    @app.route("/tags", methods=["POST"])
-    def add_tag():
-        name = request.form.get("name", "").strip()
-        if name:
-            config_repo.get_or_create_tag(name)
-            flash(f"Tag '{name}' added.")
-        return redirect(url_for("index"))
 
     return app
 

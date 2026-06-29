@@ -88,7 +88,7 @@ class Settings:
 
     # Dashboard
     dashboard_host: str = field(default_factory=lambda: _get("DASHBOARD_HOST", "127.0.0.1"))
-    dashboard_port: int = field(default_factory=lambda: _get_int("DASHBOARD_PORT", 5000))
+    dashboard_port: int = field(default_factory=lambda: _get_int("DASHBOARD_PORT", 5050))
     dashboard_secret: str | None = field(default_factory=lambda: _get("DASHBOARD_SECRET"))
 
     # Hub

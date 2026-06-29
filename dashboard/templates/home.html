@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Overview{% endblock %}
+{% block heading %}<i class="ti ti-dashboard"></i> Overview{% endblock %}
+{% block subheading %}MISSION CONTROL{% endblock %}
+{% block content %}
+<div class="stat-grid">
+  {% for s in stats %}
+  <a class="stat" href="{{ url_for('manage', entity_key=s.key) }}">
+    <div class="top">
+      <span class="label">{{ s.label }}</span>
+      <span class="ico"><i class="ti ti-{{ s.icon }}"></i></span>
+    </div>
+    <span class="value">{{ s.value }}</span>
+  </a>
+  {% endfor %}
+</div>
+
+<div class="section-title">Quick access</div>
+<div class="panel" style="padding:18px; display:flex; gap:10px; flex-wrap:wrap;">
+  {% for e in nav_entities %}
+    <a class="btn" href="{{ url_for('manage', entity_key=e.key) }}"><i class="ti ti-{{ e.icon }}"></i> {{ e.label }}</a>
+  {% endfor %}
+</div>
+{% endblock %}

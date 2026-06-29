@@ -1,7 +1,9 @@
 {% extends "base.html" %}
+{% block title %}Edit idea{% endblock %}
+{% block heading %}<i class="ti ti-edit"></i> Edit idea{% endblock %}
+{% block subheading %}IDEAS{% endblock %}
 {% block content %}
-<section class="panel">
-  <h2>Edit idea</h2>
+<section class="panel" style="padding:22px;">
   <form method="post" class="stack">
     <label>Title
       <input name="title" value="{{ idea.title }}" required>
@@ -34,8 +36,8 @@
       </select>
     </label>
     <div class="modal-actions">
-      <a class="btn" href="{{ url_for('index') }}">Cancel</a>
-      <button class="btn primary" type="submit">Save</button>
+      <a class="btn ghost" href="{{ url_for('manage', entity_key='ideas') }}">Cancel</a>
+      <button class="btn accent" type="submit"><i class="ti ti-device-floppy"></i> Save</button>
     </div>
   </form>
 </section>

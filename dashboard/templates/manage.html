@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+{% block title %}{{ entity.label }}{% endblock %}
+{% block heading %}<i class="ti ti-{{ entity.icon }}"></i> {{ entity.label }}{% endblock %}
+{% block subheading %}{{ rows|length }} ROW{{ '' if rows|length == 1 else 'S' }}{% endblock %}
+
+{% set show_actions = entity.key == 'ideas' or entity.has_active %}
+{% set ncols = entity.columns|length + 1 + (1 if show_actions else 0) %}
+{% set req = entity.import_fields|selectattr('required')|list %}
+
+{% block content %}
+<div class="panel">
+
+  {# --- Secondary bar: quick add + CSV import --- #}
+  {% if (entity.importable and entity.create_fn) %}
+  <div class="toolbar">
+    {% if req %}
+    <form method="post" action="{{ url_for('quick_add', entity_key=entity.key) }}" class="inline-form">
+      <input name="{{ req[0].name }}" placeholder="New {{ entity.label.lower().rstrip('s') }}…" required style="min-width:240px">
+      <button class="btn accent" type="submit"><i class="ti ti-plus"></i> Add</button>
+    </form>
+    {% endif %}
+    <span class="spacer"></span>
+    <form method="post" action="{{ url_for('import_csv', entity_key=entity.key) }}" enctype="multipart/form-data" class="inline-form">
+      <input type="file" name="file" accept=".csv,text/csv" required>
+      <button class="btn" type="submit"><i class="ti ti-upload"></i> Import CSV</button>
+    </form>
+  </div>
+  {% endif %}
+
+  {# --- Filters --- #}
+  {% if filters %}
+  <form method="get" class="filters">
+    {% for f in filters %}
+    <label>{{ f.label }}
+      <select name="{{ f.name }}" onchange="this.form.submit()">
+        <option value="">All</option>
+        {% for opt in f.options %}
+          <option value="{{ opt }}" {{ 'selected' if f.value == opt }}>{{ opt }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    {% endfor %}
+    <a class="btn ghost" href="{{ url_for('manage', entity_key=entity.key) }}">Clear</a>
+  </form>
+  {% endif %}
+
+  {# --- Bulk form + table --- #}
+  <form id="bulkForm" method="post">
+    <div class="toolbar">
+      <span class="sel-count" id="selCount">0 selected</span>
+      {% if entity.deletable %}
+        <button type="button" class="btn danger" onclick="askDelete()"><i class="ti ti-trash"></i> Delete</button>
+        <button id="doDelete" type="submit" formaction="{{ url_for('bulk_delete', entity_key=entity.key) }}" hidden></button>
+      {% endif %}
+      {% if entity.supports_tags %}
+      <div class="dropdown" id="tagDrop">
+        <button type="button" class="btn" onclick="document.getElementById('tagDrop').classList.toggle('open')">
+          <i class="ti ti-tag"></i> Tag selected <i class="ti ti-chevron-down"></i>
+        </button>
+        <div class="dropdown-menu">
+          <select name="tag_id" style="width:100%">
+            <option value="">Choose tag…</option>
+            {% for t in tags %}<option value="{{ t.id }}">{{ t.name }}</option>{% endfor %}
+          </select>
+          <div class="row">
+            <button class="btn accent" type="submit" name="action" value="add" formaction="{{ url_for('bulk_tag', entity_key=entity.key) }}">Add</button>
+            <button class="btn" type="submit" name="action" value="remove" formaction="{{ url_for('bulk_tag', entity_key=entity.key) }}">Remove</button>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+      <button type="button" class="btn" onclick="exportCsv()"><i class="ti ti-download"></i> Export CSV</button>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th class="col-check"><input type="checkbox" id="checkAll" onclick="toggleAll(this)"></th>
+            {% for c in entity.columns %}<th>{{ c.label }}</th>{% endfor %}
+            {% if show_actions %}<th class="col-actions">Actions</th>{% endif %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in rows %}
+          <tr>
+            <td class="col-check"><input type="checkbox" class="rowck" name="ids" value="{{ row.id }}" onclick="updateCount()"></td>
+            {% for c in entity.columns %}
+              {% set v = c.value(row) %}
+              {% if v is boolean %}
+                <td><span class="badge {{ 'on' if v else 'off' }}">{{ 'yes' if v else 'no' }}</span></td>
+              {% elif v is none or v == '' %}
+                <td><span class="muted">—</span></td>
+              {% elif c.key in ('created_at', 'start_at', 'end_at') %}
+                <td class="mono-cell">{{ v|string|truncate(16, true, '') }}</td>
+              {% elif loop.first %}
+                <td><span class="cellmain">{{ v|string|truncate(80, true, '…') }}</span></td>
+              {% else %}
+                <td>{{ v|string|truncate(60, true, '…') }}</td>
+              {% endif %}
+            {% endfor %}
+            {% if show_actions %}
+            <td class="col-actions">
+              {% if entity.key == 'ideas' %}
+                <a class="btn tiny" href="{{ url_for('edit_idea', idea_id=row.id) }}"><i class="ti ti-edit"></i> Edit</a>
+              {% endif %}
+              {% if entity.has_active %}
+                <button class="btn tiny" type="submit"
+                        formaction="{{ url_for('toggle_active', entity_key=entity.key) }}"
+                        name="id" value="{{ row.id }}"
+                        onclick="document.getElementById('toggleVal').value='{{ 'false' if row.active else 'true' }}'">
+                  {{ 'Archive' if row.active else 'Restore' }}
+                </button>
+              {% endif %}
+            </td>
+            {% endif %}
+          </tr>
+          {% else %}
+          <tr><td colspan="{{ ncols }}"><div class="empty">No {{ entity.label.lower() }} yet.</div></td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <input type="hidden" name="active" id="toggleVal" value="true">
+  </form>
+</div>
+
+{# --- Delete confirm modal --- #}
+<div id="deleteModal" class="modal" hidden>
+  <div class="modal-box">
+    <h3>Delete selected?</h3>
+    <p class="muted">You're about to delete <strong id="delCount">0</strong> {{ entity.label.lower() }}. This can't be undone.</p>
+    <div class="modal-actions">
+      <button class="btn ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn danger" onclick="confirmDelete()"><i class="ti ti-trash"></i> Delete</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const EXPORT_URL = "{{ url_for('export_csv', entity_key=entity.key) }}";
+  function checked() { return [...document.querySelectorAll('.rowck:checked')]; }
+  function updateCount() {
+    const n = checked().length;
+    document.getElementById('selCount').textContent = n + ' selected';
+    document.querySelectorAll('.rowck').forEach(c => c.closest('tr').classList.toggle('sel', c.checked));
+    const all = document.querySelectorAll('.rowck').length;
+    const head = document.getElementById('checkAll');
+    if (head) { head.checked = n > 0 && n === all; head.indeterminate = n > 0 && n < all; }
+  }
+  function toggleAll(box) {
+    document.querySelectorAll('.rowck').forEach(c => c.checked = box.checked);
+    updateCount();
+  }
+  function askDelete() {
+    const n = checked().length;
+    if (!n) { alert('Nothing selected.'); return; }
+    document.getElementById('delCount').textContent = n;
+    document.getElementById('deleteModal').hidden = false;
+  }
+  function closeModal() { document.getElementById('deleteModal').hidden = true; }
+  function confirmDelete() { document.getElementById('doDelete').click(); }
+  function exportCsv() {
+    const ids = checked().map(c => c.value);
+    const params = new URLSearchParams(window.location.search);
+    if (ids.length) params.set('ids', ids.join(','));
+    const qs = params.toString();
+    window.location = EXPORT_URL + (qs ? ('?' + qs) : '');
+  }
+</script>
+{% endblock %}

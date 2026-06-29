@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- macOS (launchd) agent for the optional Command Hub admin dashboard.
+     Install:
+       cp deploy/launchd/com.commandhub.dashboard.plist ~/Library/LaunchAgents/
+       launchctl load ~/Library/LaunchAgents/com.commandhub.dashboard.plist
+     Edit the paths (replace "andrew" with your macOS username) to match the hub.
+     Do NOT put ANTHROPIC_API_KEY in here. Serves on DASHBOARD_HOST:DASHBOARD_PORT
+     from .env (default 127.0.0.1:5050 — 5000 collides with macOS AirPlay). -->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.commandhub.dashboard</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/Users/andrew/command-hub/.venv/bin/python</string>
+    <string>-m</string>
+    <string>dashboard.app</string>
+  </array>
+  <key>WorkingDirectory</key>
+  <string>/Users/andrew/command-hub</string>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>KeepAlive</key>
+  <true/>
+  <key>StandardOutPath</key>
+  <string>/Users/andrew/command-hub/logs/dashboard.out.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/andrew/command-hub/logs/dashboard.err.log</string>
+</dict>
+</plist>

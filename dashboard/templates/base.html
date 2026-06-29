@@ -1,24 +1,56 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Command Hub — Admin</title>
-  <!-- Neutral, minimal styling by design (guardrail #4). Restyle freely. -->
+  <title>{% block title %}Command Hub{% endblock %} — Command Hub</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Sora:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.31.0/dist/tabler-icons.min.css">
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-  <header class="topbar">
-    <strong>Command Hub</strong> <span class="muted">admin</span>
-  </header>
-  <main class="container">
-    {% with messages = get_flashed_messages() %}
-      {% if messages %}
-        <div class="flash">{% for m in messages %}<div>{{ m }}</div>{% endfor %}</div>
-      {% endif %}
-    {% endwith %}
-    {% block content %}{% endblock %}
-  </main>
+  <div class="app">
+    <aside class="rail">
+      <a href="{{ url_for('index') }}" class="brand">
+        <span class="mark">⌘</span>
+        <span class="name">COMMAND<small>HUB</small></span>
+      </a>
+      <nav class="nav">
+        <a href="{{ url_for('index') }}" class="{{ 'active' if request.path == url_for('index') }}">
+          <i class="ti ti-dashboard"></i> Overview
+        </a>
+        <div class="group">Manage</div>
+        {% for e in nav_entities %}
+          <a href="{{ url_for('manage', entity_key=e.key) }}"
+             class="{{ 'active' if request.path == url_for('manage', entity_key=e.key) }}">
+            <i class="ti ti-{{ e.icon }}"></i> {{ e.label }}
+          </a>
+        {% endfor %}
+      </nav>
+      <div class="rail-foot">
+        <span class="status-dot"><span class="dot"></span> SYSTEM ONLINE</span>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <h1>{% block heading %}{% endblock %}</h1>
+        <span class="sub">{% block subheading %}{% endblock %}</span>
+      </header>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="flashes">
+            {% for cat, msg in messages %}<div class="flash {{ cat }}">{{ msg }}</div>{% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      <div class="content">{% block content %}{% endblock %}</div>
+    </main>
+  </div>
   {% block scripts %}{% endblock %}
 </body>
 </html>
