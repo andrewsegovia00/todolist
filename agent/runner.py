@@ -41,9 +41,13 @@ def _clean_env() -> dict[str, str]:
 
 
 async def _run_cli(
-    user_message: str, mode: str, session_id: str | None, mcp_config_path: str | None
+    user_message: str,
+    mode: str,
+    session_id: str | None,
+    mcp_config_path: str | None,
+    context: dict | None = None,
 ) -> AgentReply:
-    system_prompt = prompts.for_mode(mode)
+    system_prompt = prompts.for_mode(mode, context)
     cmd = [
         settings.claude_bin,
         "-p",
@@ -81,7 +85,9 @@ async def _run_cli(
         return AgentReply(text=raw, session_id=session_id)
 
 
-async def _run_sdk(user_message: str, mode: str, session_id: str | None) -> AgentReply:
+async def _run_sdk(
+    user_message: str, mode: str, session_id: str | None, context: dict | None = None
+) -> AgentReply:
     try:
         from claude_agent_sdk import query  # type: ignore
     except ImportError:
@@ -89,7 +95,7 @@ async def _run_sdk(user_message: str, mode: str, session_id: str | None) -> Agen
             text="(agent error) AGENT_MODE=sdk but claude-agent-sdk is not installed.",
             session_id=session_id,
         )
-    system_prompt = prompts.for_mode(mode)
+    system_prompt = prompts.for_mode(mode, context)
     chunks: list[str] = []
     async for message in query(prompt=user_message, options={"system_prompt": system_prompt}):
         text = getattr(message, "text", None)
@@ -103,8 +109,9 @@ async def ask(
     mode: str,
     session_id: str | None = None,
     mcp_config_path: str | None = None,
+    context: dict | None = None,
 ) -> AgentReply:
     """Run one fuzzy turn through the agent and return its reply."""
     if settings.agent_mode == "sdk":
-        return await _run_sdk(user_message, mode, session_id)
-    return await _run_cli(user_message, mode, session_id, mcp_config_path)
+        return await _run_sdk(user_message, mode, session_id, context)
+    return await _run_cli(user_message, mode, session_id, mcp_config_path, context)
